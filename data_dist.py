@@ -9,7 +9,7 @@ import itertools
 from mpi4py.futures import MPICommExecutor
 
 # load dataset, create output path
-input_path = Path(__file__).parent / "../../datasets/CLOUDf48.bin.f32"
+input_path = Path(__file__).parent / "datasets/CLOUDf48.bin.f32"
 input_data = np.fromfile(input_path, dtype=np.float32).reshape(100, 500, 500)
 
 
@@ -36,7 +36,7 @@ def run_compressor(args):
             "pressio:metric": "composite",
             "composite:plugins": ["time", "size", "error_stat", "external"],
             "external:config_name": f"{args['compressor_id']}-{args['bound']:1.1e}",
-            "external:command": str(Path(__file__).absolute().parent.parent / "visualize.py")
+            "external:command": str(Path(__file__).absolute().parent / "visualize.py")
         },
         # configure the compressor
         "compressor_config": args['compressor_config']
