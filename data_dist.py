@@ -57,6 +57,7 @@ def run_compressor(args):
     return {
         "compressor_id": args['compressor_id'],
         "bound": args['bound'],
+        "shape": "x".join(str(x) for x in np.shape(input_data[idx])),
         "metrics": metrics
     }
 
