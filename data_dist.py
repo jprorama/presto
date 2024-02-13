@@ -7,21 +7,28 @@ import libpressio
 import numpy as np
 import itertools
 from mpi4py.futures import MPICommExecutor
+import sys
+
+# procs to model
+procs=int(sys.argv[1])
 
 # load dataset, create output path
 input_path = Path(__file__).parent / "datasets/CLOUDf48.bin.f32"
 input_data = np.fromfile(input_path, dtype=np.float32).reshape(100, 500, 500)
 
+input_data = np.array_split(input_data, procs, axis=0)
 
 configs = [{
         "compressor_id": compressor_id,
         "compressor_config": {
             "pressio:abs": bound
         },
-        "bound": bound
-    } for bound, compressor_id in
+        "bound": bound,
+        "idx": idx
+    } for bound, idx, compressor_id in
         itertools.product(
-            np.logspace(-6, -1, num=6),
+            np.logspace(-6, -5, num=1),
+            range(procs),
             ["sz", "zfp"]
         )
     ]
@@ -34,17 +41,16 @@ def run_compressor(args):
         # configure the set of metrics to be gathered
         "early_config": {
             "pressio:metric": "composite",
-            "composite:plugins": ["time", "size", "error_stat", "external"],
-            "external:config_name": f"{args['compressor_id']}-{args['bound']:1.1e}",
-            "external:command": str(Path(__file__).absolute().parent / "visualize.py")
+            "composite:plugins": ["time", "size", "error_stat"], 
         },
         # configure the compressor
         "compressor_config": args['compressor_config']
         })
 
     # run compressor to determine metrics
-    decomp_data = input_data.copy()
-    comp_data = compressor.encode(input_data)
+    idx=args['idx']
+    decomp_data = input_data[idx].copy()
+    comp_data = compressor.encode(input_data[idx])
     decomp_data = compressor.decode(comp_data, decomp_data)
     metrics = compressor.get_metrics()
 
