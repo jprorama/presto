@@ -11,6 +11,7 @@ import sys
 
 # procs to model
 procs=int(sys.argv[1])
+jsonout=True
 
 # load dataset, create output path
 input_path = Path(__file__).parent / "datasets/CLOUDf48.bin.f32"
@@ -57,10 +58,24 @@ def run_compressor(args):
     return {
         "compressor_id": args['compressor_id'],
         "bound": args['bound'],
+        "proc_id" : args['idx'],
         "shape": "x".join(str(x) for x in np.shape(input_data[idx])),
         "metrics": metrics
     }
 
+buff = dict();
+index = 0
 with MPICommExecutor() as pool:
     for result in pool.map(run_compressor, configs, unordered=True):
-        pprint(result)
+        algo = configs[index]['compressor_id']
+        if algo in buff:
+            buff[algo].append(result)
+        else:
+            buff[algo] = list()
+            buff[algo].append(result)
+        index+=1
+
+if (jsonout):
+    print(json.dumps(buff, indent=1))
+else:
+    pprint(buff)
