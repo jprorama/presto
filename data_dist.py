@@ -8,14 +8,42 @@ import numpy as np
 import itertools
 from mpi4py.futures import MPICommExecutor
 import sys
+import argparse
 
 # procs to model
-procs=int(sys.argv[1])
-jsonout=True
+parser = argparse.ArgumentParser(prog=sys.argv[0],
+                                 description='''
+                                 Run libpressio compression on dataset using the given
+                                 process count split and return statistics on compression
+                                 across processes.
+                                 Eg. can be used to gather the compression size per process
+                                 ''')
+parser.add_argument("-n", "--nprocs", default=1, type=int,
+                    help="number of processes to split dataset across")
+parser.add_argument("dataset",
+                    help="dataset to compress")
+parser.add_argument("-s", "--shape", default="100x500x500",
+                    help="dataset dimensions")
+parser.add_argument("-t", "--dtype", default="float32",
+                    help="dataset type")
+parser.add_argument("-j", "--json", action='store_true',
+                    help="enable json output, otherwise pprint python")
+args = parser.parse_args()
+
+procs=args.nprocs
+dataset=args.dataset
+jsonout=args.json
+dataset_shape=[int(x) for x in args.shape.split("x")]
+if (args.dtype == "float64"):
+    datatype=np.float64
+elif (args.dtype == "int32"):
+    datatype=np.int32
+else:
+    datatype=np.float32
 
 # load dataset, create output path
-input_path = Path(__file__).parent / "datasets/CLOUDf48.bin.f32"
-input_data = np.fromfile(input_path, dtype=np.float32).reshape(100, 500, 500)
+input_path = Path(__file__).parent / dataset
+input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
 
 input_data = np.array_split(input_data, procs, axis=0)
 
