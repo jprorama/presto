@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# run a command in podman container for libpressio
+# e.g. runcmd data_dist.py 1
+
+args=$*
+
+# container cmd path
+cmd_path=/presto
+
+# maps cwd commands into /presto container path
+# and output to ./figures in /presto/figures container path
+#
+# note: don't use -t when piping through to other commands
+# https://github.com/jqlang/jq/issues/2064#issuecomment-588572223
+podman run -v ./figures:/presto/figures:U -v .:$cmd_path \
+	-i \
+	ghcr.io/robertu94/libpressio_tutorial:latest \
+	bash --login -c "$cmd_path/$args"
