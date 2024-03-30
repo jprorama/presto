@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# simple filter pipe to select proc_id and compression size from a data decomposition run
+# only arg is the compression type select
+# assumes input is for a single run
+
+compressor=${1:-"sz"}
+
+cat - | jq ".${compressor}[] | .proc_id,.metrics[\"size:compressed_size\"]" | xargs -n2 -d'\n'
