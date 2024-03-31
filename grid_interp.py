@@ -17,12 +17,12 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  output process dimensions. Defaults to no interpolation so
                                  input should equal output.
                                  ''')
-parser.add_argument("-n", "--nprocs", default=1, type=int,
-                    help="number of processes to split dataset across")
 parser.add_argument("files", nargs="*",
                     help="dataset to interpolate, stdin by default")
 parser.add_argument("-d", "--dimensions", default="4x2x2",
                     help="dataset input dimensions, (slice, row, col) row-major")
+parser.add_argument("-m", "--method", default="linear",
+                    help="interpolation method: linear, nearest, slinear, cubic, quintic and pchip")
 parser.add_argument("-s", "--scale", default="1x1x1",
                     help="new interpolated dimensions scaling factor per dimension")
 parser.add_argument("-t", "--dtype", default="float32",
@@ -31,7 +31,6 @@ parser.add_argument("-v", "--verbose", action="store_true",
                     help="produce verbose output of all data structures for debug")
 args = parser.parse_args()
 
-procs=args.nprocs # derived from new shape
 shape=[int(x) for x in args.dimensions.split("x")]
 scale=[int(x) for x in args.scale.split("x")]
 
@@ -77,7 +76,7 @@ x=np.arange(shape[1])
 y=np.arange(shape[2])
 z=np.arange(shape[0])
 
-c_space = RegularGridInterpolator((z, x, y), gridvalues.reshape(shape))
+c_space = RegularGridInterpolator((z, x, y), gridvalues.reshape(shape), method=args.method)
 
 # compute scaled interpolation dimensions
 newx=np.linspace(x[0],x[-1],len(x)*scale[1])
