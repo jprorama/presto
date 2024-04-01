@@ -53,3 +53,39 @@ grid using familar X,Y,Z row-major indexing.
 
 * The utilities expect 3D so all inputs should specify values for each dimension.
 * The project depends on the containerized [libpressio compresson library](https://github.com/CODARcode/libpressio) which must be installed to run `data_dist.py`.
+
+## Installation
+
+### Installing libpressio
+
+The easiest way to work with libpressio and the large collections of compression utilities it provides
+is to install it as a container provded by the [libpressio tutorial](https://github.com/robertu94/libpressio_tutorial/tree/master).  This is easiely done using podman on recent Ubuntu 22.04 releases.
+
+Install podman
+```
+sudo apt install -y podman 
+```
+
+Confirm podman operation with `hello-world`
+```
+podman run -it hello-world
+```
+
+You can run the tutorial container interactively using
+```
+podman run -it ghcr.io/robertu94/libpressio_tutorial:latest
+```
+
+The provided `runcmd` wrapper should take care of all environment setup for any scripts using libpressio
+and run from the same directory from which it is invoked.  Data file references are likewise local to 
+the current working directory.  All python modules for scripts are provided by and limited to the
+libpressio container.
+
+### Installing scipy
+
+The `grid_interp.py` leverages the RegularGridInterpolator from the SciPy package and thus requires
+scipy.  This is easily installed via pip:
+```
+pip install scipy
+```
+Note: the `grid_interp.py` runs in the systems Python environment, not via the libpressio container.
