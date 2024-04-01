@@ -18,8 +18,6 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  across processes.
                                  Eg. can be used to gather the compression size per process
                                  ''')
-parser.add_argument("-n", "--nprocs", default=1, type=int,
-                    help="number of processes to split dataset across")
 parser.add_argument("dataset",
                     help="dataset to compress")
 parser.add_argument("-s", "--shape", default="100x500x500",
@@ -36,7 +34,6 @@ parser.add_argument("-j", "--json", action='store_true',
                     help="enable json output, otherwise pprint python")
 args = parser.parse_args()
 
-procs=args.nprocs # derived from new shape
 dataset=args.dataset
 jsonout=args.json
 dataset_shape=[int(x) for x in args.shape.split("x")]
