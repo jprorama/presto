@@ -1,4 +1,4 @@
-# Presto - generate non-uniform data distributions
+# Presto - non-uniform data distribution benchmarking
 
 Project to create a data distribution profile for data sets
 with the goal of interpolating post-compression non-uniform
@@ -51,6 +51,59 @@ scaling in each dimension `-s 2x2x2`.  The resulting output generates a data dis
 Note: the `data_dist.py` non-uniform generator works in the dimensions of the input dataset using 
 (slice x row x col). The `grid_interp.py` interpolation utility works in the dimensions of the process
 grid using familar X,Y,Z row-major indexing.
+
+## Running the h5bench
+
+In order to test the hdf5 performance we use h5bench with a new data distribution test. This 
+test loads the distribution generated above and instantiates memory footprint for individual
+rank processes.  It then uses standard h5bench testing configurations.
+
+The new data distribution benchmark is on a feature branch of a fork of h5bench
+
+https://github.com/jprorama/h5bench/tree/feat-data-dist
+
+Cloud the fork and build h5bench following standard steps.
+
+Create a benchmark like the following, not the DATA_DIST_PATH and DATA_DIST_SCALE reference 
+the distribution above and any scaling to apply to the memory allocation, to adjust for partical data size of benchmark.
+```
+{
+    "mpi": {
+        "command": "mpirun",
+        "ranks": "8",
+        "configuration": "-n 8 --tag-output"
+    },
+    "vol": {
+    },
+    "file-system": {
+    },
+    "directory": "storage",
+    "benchmarks": [
+        {
+            "benchmark": "write_var_data_dist",
+            "file": "test.h5",
+            "configuration": {
+                "MEM_PATTERN": "CONTIG",
+                "FILE_PATTERN": "CONTIG",
+                "TIMESTEPS": "5",
+                "DELAYED_CLOSE_TIMESTEPS": "2",
+                "COLLECTIVE_DATA": "YES",
+                "COLLECTIVE_METADATA": "YES",
+                "EMULATED_COMPUTE_TIME_PER_TIMESTEP": "1 s",
+                "NUM_DIMS": "1",
+                "DIM_1": "524288",
+                "STDEV_DIM_1": "100000",
+                "DIM_2": "1",
+                "DIM_3": "1",
+                "CSV_FILE": "output.csv",
+                "DATA_DIST_PATH": "cloud-8",
+                "DATA_DIST_SCALE": "1.0",
+                "MODE": "SYNC"
+            }
+        }
+    ]
+}
+```
 
 ## Limitations
 
