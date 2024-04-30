@@ -14,6 +14,7 @@ cmd_path=/presto
 # note: don't use -t when piping through to other commands
 # https://github.com/jqlang/jq/issues/2064#issuecomment-588572223
 podman run -v ./figures:/presto/figures:U -v .:$cmd_path \
+	-w $cmd_path \
 	-i \
 	ghcr.io/robertu94/libpressio_tutorial:latest \
-	bash --login -c "$cmd_path/$args"
+	bash --login -c "$args"
