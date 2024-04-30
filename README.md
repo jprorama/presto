@@ -25,7 +25,10 @@ dimension (2x2x2) using tri-linear interpolation over the given date. This will 
 interpolated data distribution across 64 process (an 4x4x4 process grid).
 
 ```
-./runcmd data_dist.py  CLOUDf48.bin --shape 100x500x500 --reshape 50x250x250 -c sz -j | \
+./runcmd ./data_dist.py  CLOUDf48.bin \
+                         --shape 100x500x500 \
+                         --reshape 50x250x250 \
+                         -c sz -j | \
 ./filter_proc_size | \
 ./grid_interp.py -d 2x2x2 -s 2x2x2
 ```
