@@ -145,3 +145,118 @@ scipy.  This is easily installed via pip:
 pip install scipy
 ```
 Note: the `grid_interp.py` runs in the systems Python environment, not via the libpressio container.
+
+### Installing hdf5 1.14.x with Subfiling Support
+
+In order to explore different configuration of ranks to file writers in h5bench, we may need to build
+a recent release of HDF5 with subfiling support and then build h5bench against that release.
+
+These are the steps to building these tools on Polaris at ALCF.
+
+The first step is to [download the tar.gz of hdf5 1.14.2 from the HDF Group](https://www.hdfgroup.org/downloads/hdf5/source-code/).  The install instructions are provided along with the source in the 
+`release_docs/INSTALL` and `INSTALL_CMAKE` for cmake.  The recommended build in approach is to use the 
+ctest mechanism. The steps are summarized here for convenience.
+
+Select a base dir for your various projects are located:
+```
+MYPROJ=$HOME/projects
+mkdir -p $MYPROJ
+cd $MYPROJ
+```
+
+Create a build dir for ctest:
+```
+HDF5BUILD=$MYPROJ/hdf5-build
+mkdir $HDF5BUILD
+cd $HDF5BUILD
+```
+
+Unpack the downloaded hdf5 source tarball to this directory:
+```
+tar -xzf ~/Downloads/hdf5-1.14.4-2.tar.gz
+```
+
+Copy build support files from the distribution to the top level ctest build dir
+```
+cp hdf5-1.14.4-2/config/cmake/scripts/CTestScript.cmake .
+cp hdf5-1.14.4-2/config/cmake/scripts/HDF5* .
+```
+
+Add recommended dependencies in the same directory
+```
+wget https://github.com/MathisRosenhauer/libaec/releases/download/v1.0.6/libaec-1.0.6.tar.gz
+wget https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
+```
+
+Set up a interactive job on the debug resources for the build.
+```
+qsub -I -l select=1 -l filesystems=home:eagle -l walltime=1:00:00 -q debug -A <project_name>
+```
+
+You'll need to cd back into your build dir
+```
+cd $HDF5BUILD
+```
+
+Load the build environment
+```
+module use /soft/modulefiles
+module load spack-pe-base cmake
+```
+
+Set the recommended install location from the Install docs
+```
+export HDF5_HOME=$HDF5BUILD/HDF_Group/HDF5/1.14.4
+```
+
+Add these lines to the MPI section of the HDF5options.cmake file
+```
+  set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DHDF5_ENABLE_THREADSAFE:BOOL=ON")
+  set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DHDF5_ENABLE_SUBFILING_VFD:BOOL=ON")
+```
+
+Note, the h5bench hdf5 build notes and hdf5 subfiling build docs differ in enableing threadsafe. 
+We opt to follow the h5bench build notes for hdf5.
+
+Build hdf5 with ctest
+```
+ctest -S HDF5config.cmake,BUILD_GENERATOR=Unix -D MPI:BOOL=ON -C Release -VV -O hdf5.log
+```
+
+Install into the $HDF5_HOME
+```
+cd build
+make install
+```
+
+### Building h5bench from repo with data-dist write tests against the hdf5 1.14.x subfiling  build 
+
+Continue from the above build environment and re turn to the project directory
+
+```
+cd $MYPROJ/h5bench
+```
+
+Note you will need to have cloned h5bench on the login node (in another shell or before the interactive job):
+```
+git clone https://github.com/jprorama/h5bench
+cd h5bench
+git checkout feat-data-dist
+```
+
+Create the cmake build dir
+```
+mkdir build && cd build
+```
+
+Configure cmake, build, and install
+```
+cmake -DCMAKE_INSTALL_PREFIX=~/.local ..
+make
+make install
+```
+
+Now you can run h5bench after updating the library path
+```
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HDF5_HOME/lib
+```
