@@ -9,6 +9,7 @@ import itertools
 from mpi4py.futures import MPICommExecutor
 import sys
 import argparse
+import math
 
 # procs to model
 parser = argparse.ArgumentParser(prog=sys.argv[0],
@@ -22,8 +23,10 @@ parser.add_argument("dataset",
                     help="dataset to compress")
 parser.add_argument("-s", "--shape", default="100x500x500",
                     help="dataset dimensions")
+parser.add_argument("-m", "--memshape", default="100x500x500",
+                    help="memory dimensions dataset is loaded into")
 parser.add_argument("-r", "--reshape", default="25x250x250",
-                    help="new dataset dimensions, must divide dataset dimensions evenly")
+                    help="new dataset dimensions, must divide memshape dimensions evenly")
 parser.add_argument("-b", "--bounds", default="-6",
                     help="commas separated list of compression bounds, 10**n")
 parser.add_argument("-c", "--compressors", default="sz,zfp",
@@ -37,6 +40,7 @@ args = parser.parse_args()
 dataset=args.dataset
 jsonout=args.json
 dataset_shape=[int(x) for x in args.shape.split("x")]
+mem_shape=[int(x) for x in args.memshape.split("x")]
 dataset_newshape=[int(x) for x in args.reshape.split("x")]
 bounds=[10**int(x) for x in args.bounds.split(",")]
 compressors=[x for x in args.compressors.split(",")]
@@ -107,6 +111,17 @@ def run_compressor(args):
 # load dataset, create output path
 input_path = Path(__file__).parent / dataset
 input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
+
+# if mem_size is bigger than input data copy into larger space
+# https://stackoverflow.com/a/7115957/8928529
+
+input_size = math.prod(dataset_shape)
+mem_size = math.prod(mem_shape)
+if (mem_size > input_size):
+    # cast into larger memory, assumes 3D
+    mem_data = np.zeros(mem_shape, dtype=datatype)
+    mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
+    input_data = mem_data
 
 input_data = cubify(input_data, dataset_newshape)
 
