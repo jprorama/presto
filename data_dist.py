@@ -27,8 +27,8 @@ parser.add_argument("-m", "--memshape", default="100x500x500",
                     help="memory dimensions dataset is loaded into")
 parser.add_argument("-r", "--reshape", default="25x250x250",
                     help="new dataset dimensions, must divide memshape dimensions evenly")
-parser.add_argument("-b", "--bounds", default="-6",
-                    help="commas separated list of compression bounds, 10**n")
+parser.add_argument("-b", "--bounds", default="0.000001",
+                    help="commas separated list of compression bounds as floats")
 parser.add_argument("-c", "--compressors", default="sz,zfp",
                     help="comma separated list of compressors to select")
 parser.add_argument("-t", "--dtype", default="float32",
@@ -42,7 +42,7 @@ jsonout=args.json
 dataset_shape=[int(x) for x in args.shape.split("x")]
 mem_shape=[int(x) for x in args.memshape.split("x")]
 dataset_newshape=[int(x) for x in args.reshape.split("x")]
-bounds=[10**int(x) for x in args.bounds.split(",")]
+bounds=[float(x) for x in args.bounds.split(",")]
 compressors=[x for x in args.compressors.split(",")]
 
 if (args.dtype == "float64"):
