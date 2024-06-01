@@ -7,6 +7,7 @@ import libpressio
 import numpy as np
 import itertools
 from mpi4py.futures import MPICommExecutor
+from mpi4py import MPI
 import sys
 import argparse
 import math
@@ -162,7 +163,9 @@ if __name__ == '__main__':
                 buff[algo].append(result)
             index+=1
 
-    if (jsonout):
-        print(json.dumps(buff, indent=1, cls=NpEncoder))
-    else:
-        pprint(buff)
+    rank = MPI.COMM_WORLD.Get_rank()
+    if (rank == 0):
+        if (jsonout):
+            print(json.dumps(buff, indent=1, cls=NpEncoder))
+        else:
+            pprint(buff)
