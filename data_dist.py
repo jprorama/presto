@@ -108,54 +108,61 @@ def run_compressor(args):
         "metrics": metrics
     }
 
-# load dataset, create output path
-input_path = Path(__file__).parent / dataset
-input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
+#
+# use main idiom to protect the computations in the pool
+#
+# https://mpi4py.readthedocs.io/en/stable/mpi4py.futures.html#examples
+#
+if __name__ == '__main__':
 
-# if mem_size is bigger than input data copy into larger space
-# https://stackoverflow.com/a/7115957/8928529
+    # load dataset, create output path
+    input_path = Path(__file__).parent / dataset
+    input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
 
-input_size = math.prod(dataset_shape)
-mem_size = math.prod(mem_shape)
-if (mem_size > input_size):
-    # cast into larger memory, assumes 3D
-    mem_data = np.zeros(mem_shape, dtype=datatype)
-    mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
-    input_data = mem_data
+    # if mem_size is bigger than input data copy into larger space
+    # https://stackoverflow.com/a/7115957/8928529
 
-input_data = cubify(input_data, dataset_newshape)
+    input_size = math.prod(dataset_shape)
+    mem_size = math.prod(mem_shape)
+    if (mem_size > input_size):
+        # cast into larger memory, assumes 3D
+        mem_data = np.zeros(mem_shape, dtype=datatype)
+        mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
+        input_data = mem_data
 
-configs = [{
-        "compressor_id": compressor_id,
-        "compressor_config": {
-            "pressio:abs": bound
-        },
-        "bound": bound,
-        "idx": idx,
-        "data": input_data
-    } for bound, idx, compressor_id in
-        itertools.product(
-            np.array(bounds),
-            range(input_data.shape[0]),
-            compressors
-        )
-    ]
+    input_data = cubify(input_data, dataset_newshape)
+
+    configs = [{
+            "compressor_id": compressor_id,
+            "compressor_config": {
+                "pressio:abs": bound
+            },
+            "bound": bound,
+            "idx": idx,
+            "data": input_data
+        } for bound, idx, compressor_id in
+            itertools.product(
+                np.array(bounds),
+                range(input_data.shape[0]),
+                compressors
+            )
+        ]
 
 
 
-buff = dict();
-index = 0
-with MPICommExecutor() as pool:
-    for result in pool.map(run_compressor, configs, unordered=True):
-        algo = configs[index]['compressor_id']
-        if algo in buff:
-            buff[algo].append(result)
-        else:
-            buff[algo] = list()
-            buff[algo].append(result)
-        index+=1
+    buff = dict();
+    index = 0
+    with MPICommExecutor() as pool:
+        for result in pool.map(run_compressor, configs, unordered=True):
+            algo = configs[index]['compressor_id']
+            if algo in buff:
+                buff[algo].append(result)
+            else:
+                buff[algo] = list()
+                buff[algo].append(result)
+            index+=1
 
-if (jsonout):
-    print(json.dumps(buff, indent=1, cls=NpEncoder))
-else:
-    pprint(buff)
+    if (jsonout):
+        print(json.dumps(buff, indent=1, cls=NpEncoder))
+    else:
+        pprint(buff)
