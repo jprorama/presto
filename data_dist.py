@@ -96,8 +96,8 @@ def run_compressor(args):
 
     # run compressor to determine metrics
     idx=args['idx']
-    decomp_data = args["data"][idx].copy()
-    comp_data = compressor.encode(args["data"][idx])
+    decomp_data = args["data"].copy()
+    comp_data = compressor.encode(args["data"])
     decomp_data = compressor.decode(comp_data, decomp_data)
     metrics = compressor.get_metrics()
 
@@ -133,6 +133,10 @@ if __name__ == '__main__':
 
     input_data = cubify(input_data, dataset_newshape)
 
+    # note: input_data[idx] are limited to < 2GiB of data
+    # due to pickled message size limits in MPI-1/2/3
+    # recommended to use pkl5 util to overcome limits
+    # https://github.com/mpi4py/mpi4py/issues/119
     configs = [{
             "compressor_id": compressor_id,
             "compressor_config": {
@@ -140,7 +144,7 @@ if __name__ == '__main__':
             },
             "bound": bound,
             "idx": idx,
-            "data": input_data
+            "data": input_data[idx]
         } for bound, idx, compressor_id in
             itertools.product(
                 np.array(bounds),
