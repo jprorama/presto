@@ -94,8 +94,13 @@ def run_compressor(args):
         "compressor_config": args['compressor_config']
         })
 
-    # run compressor to determine metrics
     idx=args['idx']
+
+    # if we resize the last chunk, resize it
+    if (args["resize"]):
+        args["data"] = args["data"][:args["last_len"]]
+
+    # run compressor to determine metrics
     decomp_data = args["data"].copy()
     comp_data = compressor.encode(args["data"])
     decomp_data = compressor.decode(comp_data, decomp_data)
@@ -133,6 +138,21 @@ if __name__ == '__main__':
 
     input_data = cubify(input_data, dataset_newshape)
 
+    # test truncate last cube to original data size
+    # only works for 1D data sets
+    # and only if we resized to artificial mem_size
+    resize_last = False
+    if (mem_size > input_size):
+        if (input_data[1]==1 and input_data[2]==1):
+            # take last cube and bring it back to size
+            resize_last==True
+
+    idx_range = input_data.shape[0]
+    last_len = 0 # assume we divide evenly
+    if (resize_last):
+        idx_range = int(dataset.shape[2] / input_data.shape[0])
+        last_len = dataset.shape[2] % input_data.shape[0]
+
     # note: input_data[idx] are limited to < 2GiB of data
     # due to pickled message size limits in MPI-1/2/3
     # recommended to use pkl5 util to overcome limits
@@ -144,11 +164,13 @@ if __name__ == '__main__':
             },
             "bound": bound,
             "idx": idx,
-            "data": input_data[idx]
+            "data": input_data[idx],
+            "resize": (idx == (input_data.shape[0]-1) and resize_last),
+            "last_len": last_len
         } for bound, idx, compressor_id in
             itertools.product(
                 np.array(bounds),
-                range(input_data.shape[0]),
+                range(idx_range),
                 compressors
             )
         ]
