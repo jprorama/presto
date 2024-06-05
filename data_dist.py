@@ -98,7 +98,12 @@ def run_compressor(args):
 
     # if we resize the last chunk, resize it
     if (args["resize"]):
-        args["data"] = args["data"][:args["last_len"]]
+        if debug: print(f"args['last_len']: {args['last_len']}", file=sys.stderr)
+        cutoff  = args['last_len']
+        trunc = args["data"].copy()
+        trunc = trunc[:,:, :cutoff]
+        args["data"] = trunc
+        if debug: print(f"reshaped data: {args['data'].shape}", file=sys.stderr)
 
     # run compressor to determine metrics
     decomp_data = args["data"].copy()
@@ -110,7 +115,7 @@ def run_compressor(args):
         "compressor_id": args['compressor_id'],
         "bound": args['bound'],
         "proc_id" : args['idx'],
-        "shape": "x".join(str(x) for x in np.shape(input_data[idx])),
+        "shape": "x".join(str(x) for x in args["data"].shape),
         "metrics": metrics
     }
 
@@ -121,6 +126,7 @@ def run_compressor(args):
 #
 if __name__ == '__main__':
 
+    debug = True
     # load dataset, create output path
     input_path = Path(__file__).parent / dataset
     input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
@@ -143,15 +149,21 @@ if __name__ == '__main__':
     # and only if we resized to artificial mem_size
     resize_last = False
     if (mem_size > input_size):
-        if (input_data[1]==1 and input_data[2]==1):
+        if debug: print(f"input_data: {input_data.shape}", file=sys.stderr)
+        if debug: print(f"input_data.shape[1]: {input_data.shape[1]}", file=sys.stderr)
+        if debug: print(f"input_data.shape[2]: {input_data.shape[2]}", file=sys.stderr)
+        if (input_data.shape[1]==1 and input_data.shape[2]==1):
             # take last cube and bring it back to size
-            resize_last==True
+            resize_last = True
+
+    if debug: print(f"resize_last: {resize_last}", file=sys.stderr)
 
     idx_range = input_data.shape[0]
     last_len = 0 # assume we divide evenly
     if (resize_last):
-        idx_range = int(dataset.shape[2] / input_data.shape[0])
-        last_len = dataset.shape[2] % input_data.shape[0]
+        idx_range = int(dataset_shape[2] / input_data.shape[3]) + 1
+        last_len = dataset_shape[2] % input_data.shape[0]
+        if debug:print(f"idx_range: {idx_range} last_len: {last_len}", file=sys.stderr)
 
     # note: input_data[idx] are limited to < 2GiB of data
     # due to pickled message size limits in MPI-1/2/3
