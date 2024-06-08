@@ -22,6 +22,8 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  ''')
 parser.add_argument("dataset",
                     help="dataset to compress")
+parser.add_argument("-d", "--debug", default=False,
+                    help="print debug data to stderr")
 parser.add_argument("-s", "--shape", default="100x500x500",
                     help="dataset dimensions")
 parser.add_argument("-m", "--memshape", default="100x500x500",
@@ -38,6 +40,7 @@ parser.add_argument("-j", "--json", action='store_true',
                     help="enable json output, otherwise pprint python")
 args = parser.parse_args()
 
+debug=args.debug
 dataset=args.dataset
 jsonout=args.json
 dataset_shape=[int(x) for x in args.shape.split("x")]
@@ -99,6 +102,7 @@ def run_compressor(args):
     # if we resize the last chunk, resize it
     if (args["resize"]):
         if debug: print(f"args['last_len']: {args['last_len']}", file=sys.stderr)
+        if debug: print(f"input data shape: {args['data'].shape}", file=sys.stderr)
         cutoff  = args['last_len']
         trunc = args["data"].copy()
         trunc = trunc[:,:, :cutoff]
@@ -126,10 +130,10 @@ def run_compressor(args):
 #
 if __name__ == '__main__':
 
-    debug = True
     # load dataset, create output path
     input_path = Path(__file__).parent / dataset
     input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
+    if debug: print(f"read shape: {input_data.shape}", file=sys.stderr)
 
     # if mem_size is bigger than input data copy into larger space
     # https://stackoverflow.com/a/7115957/8928529
@@ -137,15 +141,17 @@ if __name__ == '__main__':
     input_size = math.prod(dataset_shape)
     mem_size = math.prod(mem_shape)
     if (mem_size > input_size):
-        # cast into larger memory, assumes 3D
+        # cast into larger memory footprint, assumes 3D
         mem_data = np.zeros(mem_shape, dtype=datatype)
         mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
         input_data = mem_data
+    if debug: print(f"mem shape: {input_data.shape}", file=sys.stderr)
 
     input_data = cubify(input_data, dataset_newshape)
+    if debug: print(f"cubified shape: {input_data.shape}", file=sys.stderr)
 
     # test truncate last cube to original data size
-    # only works for 1D data sets
+    # only works for 1D data sets (i.e. resize of last dim only)
     # and only if we resized to artificial mem_size
     resize_last = False
     if (mem_size > input_size):
@@ -161,8 +167,9 @@ if __name__ == '__main__':
     idx_range = input_data.shape[0]
     last_len = 0 # assume we divide evenly
     if (resize_last):
-        idx_range = int(dataset_shape[2] / input_data.shape[3]) + 1
-        last_len = dataset_shape[2] % input_data.shape[0]
+        if debug: print(f"input_data.shape: {input_data.shape}", file=sys.stderr)
+        if debug: print(f"dataset_shape: {dataset_shape}", file=sys.stderr)
+        last_len = dataset_shape[2] % input_data.shape[3]
         if debug:print(f"idx_range: {idx_range} last_len: {last_len}", file=sys.stderr)
 
     # note: input_data[idx] are limited to < 2GiB of data
