@@ -39,6 +39,15 @@ parser.add_argument("--mem_pattern", choices=["CONTIG","INTERLEAVED"], default="
 parser.add_argument("--file_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
                     help="storage patterh file")
 
+# timesteps and emulation timings
+parser.add_argument("--timesteps",
+                    help="timesteps to benchmark")
+parser.add_argument("--cpt",
+                    help="emulated compute time per timestep")
+parser.add_argument("--dct",
+                    help="delayed close timesteps")
+
+
 # data set information
 parser.add_argument("--dim1",
                     help="particles in dim 1")
@@ -93,6 +102,10 @@ if __name__ == '__main__':
     for i in range(len(h5b_cfg["benchmarks"])):
         if benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = benchmark
         if hdf5file: h5b_cfg["benchmarks"][i]["file"] = hdf5file
+
+        if args.timesteps: h5b_cfg["benchmarks"][i]["configuration"]["TIMESTEPS"] = args.timesteps
+        if args.cpt: h5b_cfg["benchmarks"][i]["configuration"]["EMULATED_COMPUTE_TIME_PER_TIMESTEP"] = f"{args.cpt} s"
+        if args.dct: h5b_cfg["benchmarks"][i]["configuration"]["DELAYED_CLOSE_TIMESTEPS"] = args.dct
         if datadist: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_PATH"] = datadist
         if datascale: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_SCALE"] = datascale
         if args.mem_pattern: h5b_cfg["benchmarks"][i]["configuration"]["MEM_PATTERN"] = args.mem_pattern 
