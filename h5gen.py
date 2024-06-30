@@ -15,31 +15,41 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  Generate h5bench json job script.
                                  ''')
 parser.add_argument("configfile",
-                    help="data distribution file")
-parser.add_argument("--datadist",
-                    help="data distribution file")
-parser.add_argument("--datascale",
-                    help="data distribution scaling factor")
-parser.add_argument("--hdf5file",
-                    help="hdf5 output file for tests")
-parser.add_argument("--hostsfile",
-                    help="hostsfile for mpi")
-parser.add_argument("--mem_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
-                    help="storage pattern memory")
-parser.add_argument("--file_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
-                    help="storage patterh file")
-parser.add_argument("--dim1",
-                    help="particles in dim 1")
-parser.add_argument("--stdev_dim1",
-                    help="particle standard deviation, for var_normal")
+                    help="template h5bench json file")
+
+# mpi parameters
 parser.add_argument("-r", "--ranks", default="8",
                     help="rank count")
 parser.add_argument("-p", "--procs", default="64",
                     help="processors per node")
-parser.add_argument("-b", "--benchmark",
-                    help="benchmark to run")
+parser.add_argument("--hostsfile",
+                    help="hostsfile for mpi")
 parser.add_argument("-t", "--threads", default="1",
                     help="dataset type")
+
+# benchmark
+parser.add_argument("-b", "--benchmark",
+                    help="benchmark to run")
+
+# output file controls
+parser.add_argument("--hdf5file",
+                    help="hdf5 output file for tests")
+parser.add_argument("--mem_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
+                    help="storage pattern memory")
+parser.add_argument("--file_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
+                    help="storage patterh file")
+
+# data set information
+parser.add_argument("--dim1",
+                    help="particles in dim 1")
+parser.add_argument("--stdev_dim1",
+                    help="particle standard deviation, for var_normal")
+parser.add_argument("--datadist",
+                    help="data distribution file")
+parser.add_argument("--datascale",
+                    help="data distribution scaling factor")
+
+# other args
 parser.add_argument("-j", "--json", action='store_true',
                     help="enable json output, otherwise pprint python")
 args = parser.parse_args()
