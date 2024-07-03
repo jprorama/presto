@@ -26,6 +26,9 @@ parser.add_argument("--hostsfile",
                     help="hostsfile for mpi")
 parser.add_argument("-t", "--threads", default="1",
                     help="dataset type")
+parser.add_argument("--mpiextras",
+                    help="extra params for the mpirun")
+
 
 # benchmark
 parser.add_argument("-b", "--benchmark",
@@ -97,7 +100,9 @@ if __name__ == '__main__':
     with open(configfile) as json_data:
         h5b_cfg = json.load(json_data)
     
-    h5b_cfg["mpi"]["configuration"] = f"-n {ranks} -ppn {ppn} --depth {threads} --hostsfile {hostsfile}"
+    h5b_cfg["mpi"]["configuration"] = f"-n {ranks} -ppn {ppn} --depth {threads}"
+    if hostsfile: h5b_cfg["mpi"]["configuration"] = f"-n {ranks} -ppn {ppn} --depth {threads} --hostsfile {hostsfile}"
+    if args.mpiextras: h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {args.mpiextras}"
 
     for i in range(len(h5b_cfg["benchmarks"])):
         if benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = benchmark
