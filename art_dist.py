@@ -41,6 +41,8 @@ if (args.dtype == "float64"):
     datatype=np.float64
 elif (args.dtype == "int32"):
     datatype=np.int32
+elif (args.dtype == "byte"):
+    datatype=np.byte
 else:
     datatype=np.float32
 
