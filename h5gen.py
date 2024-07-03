@@ -35,6 +35,8 @@ parser.add_argument("-b", "--benchmark",
                     help="benchmark to run")
 
 # output file controls
+parser.add_argument("--directory",
+                    help="hdf5 storage dir output files")
 parser.add_argument("--hdf5file",
                     help="hdf5 output file for tests")
 parser.add_argument("--mem_pattern", choices=["CONTIG","INTERLEAVED"], default="CONTIG",
@@ -97,6 +99,7 @@ if __name__ == '__main__':
     if args.threads:        h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --depth {args.threads}'
     if args.hostsfile:      h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --hostsfile {args.hostsfile}'
     if args.mpiextras:      h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {args.mpiextras}"
+    if args.directory:      h5b_cfg["directory"] = f"{args.directory}"
 
     for i in range(len(h5b_cfg["benchmarks"])):
         if args.benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = args.benchmark
