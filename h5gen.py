@@ -18,13 +18,13 @@ parser.add_argument("configfile",
                     help="template h5bench json file")
 
 # mpi parameters
-parser.add_argument("-r", "--ranks", default="8",
+parser.add_argument("-r", "--ranks",
                     help="rank count")
-parser.add_argument("-p", "--procs", default="64",
+parser.add_argument("-p", "--procs",
                     help="processors per node")
 parser.add_argument("--hostsfile",
                     help="hostsfile for mpi")
-parser.add_argument("-t", "--threads", default="1",
+parser.add_argument("-t", "--threads",
                     help="dataset type")
 parser.add_argument("--mpiextras",
                     help="extra params for the mpirun")
@@ -66,16 +66,6 @@ parser.add_argument("-j", "--json", action='store_true',
                     help="enable json output, otherwise pprint python")
 args = parser.parse_args()
 
-ranks = int(args.ranks)
-ppn = int(args.procs)
-threads = int(args.threads)
-jsonout=args.json
-benchmark = args.benchmark
-hostsfile=args.hostsfile
-datadist=args.datadist
-datascale=args.datascale
-configfile=args.configfile
-hdf5file=args.hdf5file
 
 
 # encoder for json to avoid int64 exceptons
@@ -97,22 +87,24 @@ class NpEncoder(json.JSONEncoder):
 #
 if __name__ == '__main__':
 
-    with open(configfile) as json_data:
+    with open(args.configfile) as json_data:
         h5b_cfg = json.load(json_data)
     
-    h5b_cfg["mpi"]["configuration"] = f"-n {ranks} -ppn {ppn} --depth {threads}"
-    if hostsfile: h5b_cfg["mpi"]["configuration"] = f"-n {ranks} -ppn {ppn} --depth {threads} --hostsfile {hostsfile}"
-    if args.mpiextras: h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {args.mpiextras}"
+    if args.ranks:          h5b_cfg["mpi"]["configuration"] = f"-n {args.ranks}"
+    if args.procs:          h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} -ppn {args.procs}'
+    if args.threads:        h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --depth {args.threads}'
+    if args.hostsfile:      h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --hostsfile {args.hostsfile}'
+    if args.mpiextras:      h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {args.mpiextras}"
 
     for i in range(len(h5b_cfg["benchmarks"])):
-        if benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = benchmark
-        if hdf5file: h5b_cfg["benchmarks"][i]["file"] = hdf5file
+        if args.benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = args.benchmark
+        if args.hdf5file: h5b_cfg["benchmarks"][i]["file"] = args.hdf5file
 
         if args.timesteps: h5b_cfg["benchmarks"][i]["configuration"]["TIMESTEPS"] = args.timesteps
         if args.cpt: h5b_cfg["benchmarks"][i]["configuration"]["EMULATED_COMPUTE_TIME_PER_TIMESTEP"] = f"{args.cpt} s"
         if args.dct: h5b_cfg["benchmarks"][i]["configuration"]["DELAYED_CLOSE_TIMESTEPS"] = args.dct
-        if datadist: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_PATH"] = datadist
-        if datascale: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_SCALE"] = datascale
+        if args.datadist: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_PATH"] = args.datadist
+        if args.datascale: h5b_cfg["benchmarks"][i]["configuration"]["DATA_DIST_SCALE"] = args.datascale
         if args.mem_pattern: h5b_cfg["benchmarks"][i]["configuration"]["MEM_PATTERN"] = args.mem_pattern 
         if args.file_pattern: h5b_cfg["benchmarks"][i]["configuration"]["FILE_PATTERN"] = args.file_pattern
         if args.dim1: h5b_cfg["benchmarks"][i]["configuration"]["DIM_1"] = args.dim1
