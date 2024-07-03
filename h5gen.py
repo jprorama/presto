@@ -60,6 +60,8 @@ parser.add_argument("--datadist",
                     help="data distribution file")
 parser.add_argument("--datascale",
                     help="data distribution scaling factor")
+parser.add_argument("--nocollective", action='store_true',
+                    help="prevent collective data and metadata")
 
 # other args
 parser.add_argument("-j", "--json", action='store_true',
@@ -109,5 +111,8 @@ if __name__ == '__main__':
         if args.file_pattern: h5b_cfg["benchmarks"][i]["configuration"]["FILE_PATTERN"] = args.file_pattern
         if args.dim1: h5b_cfg["benchmarks"][i]["configuration"]["DIM_1"] = args.dim1
         if args.stdev_dim1: h5b_cfg["benchmarks"][i]["configuration"]["STDEV_DIM_1"] = args.stdev_dim1
+        if args.nocollective:
+            h5b_cfg["benchmarks"][i]["configuration"]["COLLECTIVE_DATA"] = "NO"
+            h5b_cfg["benchmarks"][i]["configuration"]["COLLECTIVE_METADATA"] = "NO"
    
     print(json.dumps(h5b_cfg, indent=4, cls=NpEncoder))
