@@ -43,10 +43,11 @@ if [[ $TESTS =~ "uniform" ]]
 then
 exp_name="uniform_sync_${DATASET}+n${RANKS}+r$i"
 echo -n ${exp_name}": "
-h5bench_script=uniform-${DATASET}-${RANKS}-h5b.json
-./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}-template > ${h5bench_script}_${PBS_JOBID}
+h5bench_script=uniform-${DATASET}-h5b
+./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}.json-template > ${h5bench_script}_${PBS_JOBID}.json
 result="$(run_bench h5bench --debug ${h5bench_script}_${PBS_JOBID})"
 echo ${exp_name} > ${result}/experiment
+mv --backup=numbered ${h5bench_script}_${PBS_JOBID}.json ${expdir}
 mv ${result} ${expdir}
 clean_up
 fi
@@ -55,10 +56,11 @@ if [[ $TESTS =~ "normal" ]]
 then
 exp_name="normal_sync_${DATASET}+n${RANKS}+stdev0+r$i"
 echo -n ${exp_name}": "
-h5bench_script=normal-${DATASET}-${RANKS}-h5b.json
-./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}-template > ${h5bench_script}_${PBS_JOBID}
+h5bench_script=normal-${DATASET}-h5b
+./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}.json-template > ${h5bench_script}_${PBS_JOBID}.json
 result="$(run_bench h5bench --debug ${h5bench_script}_${PBS_JOBID})"
 echo ${exp_name} > ${result}/experiment
+mv --backup=numbered ${h5bench_script}_${PBS_JOBID}.json ${expdir}
 mv ${result} ${expdir}
 clean_up
 fi
@@ -67,10 +69,11 @@ if [[ $TESTS =~ "datadist" ]]
 then
 exp_name="datadist_sync_${DATASET}+n${RANKS}+interp+r$i"
 echo -n ${exp_name}": "
-h5bench_script=datadist-${DATASET}-${RANKS}-h5b.json
-./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}-template > ${h5bench_script}_${PBS_JOBID}
+h5bench_script=datadist-${DATASET}-h5b
+./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}.json-template > ${h5bench_script}_${PBS_JOBID}.json
 result="$(run_bench h5bench --debug ${h5bench_script}_${PBS_JOBID})"
 echo ${exp_name} > ${result}/experiment
+mv --backup=numbered ${h5bench_script}_${PBS_JOBID}.json ${expdir}
 mv ${result} ${expdir}
 clean_up
 fi
@@ -79,10 +82,11 @@ if [[ $TESTS =~ "mean" ]]
 then
 exp_name="datadist_sync_${DATASET}+n${RANKS}+mean+r$i"
 echo -n ${exp_name}": "
-h5bench_script=datadist-${DATASET}-mean-${RANKS}-h5b.json
-./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}-template > ${h5bench_script}_${PBS_JOBID}
+h5bench_script=datadist-${DATASET}-mean-h5b
+./h5gen.py --hdf5file $HDF5_FILE  $H5GEN_ARGS ${h5bench_script}.json-template > ${h5bench_script}_${PBS_JOBID}.json
 result="$(run_bench h5bench --debug ${h5bench_script}_${PBS_JOBID})"
 echo ${exp_name} > ${result}/experiment
+mv --backup=numbered ${h5bench_script}_${PBS_JOBID}.json ${expdir}
 mv ${result} ${expdir}
 clean_up
 fi
