@@ -18,16 +18,16 @@ parser.add_argument("configfile",
                     help="template h5bench json file")
 
 # mpi parameters
-parser.add_argument("-r", "--ranks",
+parser.add_argument("-r", "--ranks", default=64,
                     help="rank count")
-parser.add_argument("-p", "--procs",
+parser.add_argument("-p", "--procs", default=64,
                     help="processors per node")
 parser.add_argument("--hostsfile",
                     help="hostsfile for mpi")
-parser.add_argument("-t", "--threads",
+parser.add_argument("-t", "--threads", default=1,
                     help="dataset type")
 parser.add_argument("--mpiextras",
-                    help="extra params for the mpirun")
+                    help="extra params for the mpirun, no spaces, comma separated")
 
 
 # benchmark
@@ -98,7 +98,9 @@ if __name__ == '__main__':
     if args.procs:          h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} -ppn {args.procs}'
     if args.threads:        h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --depth {args.threads}'
     if args.hostsfile:      h5b_cfg["mpi"]["configuration"] = f'{h5b_cfg["mpi"]["configuration"]} --hostsfile {args.hostsfile}'
-    if args.mpiextras:      h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {args.mpiextras}"
+    if args.mpiextras:
+        mpiargs=args.mpiextras.replace(":"," --")
+        h5b_cfg["mpi"]["configuration"] = f"{h5b_cfg['mpi']['configuration']} {mpiargs}"
     if args.directory:      h5b_cfg["directory"] = f"{args.directory}"
 
     for i in range(len(h5b_cfg["benchmarks"])):
