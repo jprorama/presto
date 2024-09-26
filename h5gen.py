@@ -66,6 +66,10 @@ parser.add_argument("--nocollective", action='store_true',
                     help="prevent collective data and metadata")
 
 # other args
+parser.add_argument("--csvfile",
+                    help="path to csv output file")
+parser.add_argument("--nocsvfile", action="store_true",
+                    help="suppress use of CSV_FILE as output in h5bench json config")
 parser.add_argument("-j", "--json", action='store_true',
                     help="enable json output, otherwise pprint python")
 args = parser.parse_args()
@@ -107,6 +111,12 @@ if __name__ == '__main__':
         if args.benchmark: h5b_cfg["benchmarks"][i]["benchmark"] = args.benchmark
         if args.hdf5file: h5b_cfg["benchmarks"][i]["file"] = args.hdf5file
 
+        # suppress CSV_FILE or use CLI value or use template value
+        if args.nocsvfile:
+            del h5b_cfg["benchmarks"][i]["configuration"]["CSV_FILE"]
+        elif args.csvfile:
+            h5b_cfg["benchmarks"][i]["configuration"]["CSV_FILE"] = args.csvfile
+            
         if args.timesteps: h5b_cfg["benchmarks"][i]["configuration"]["TIMESTEPS"] = args.timesteps
         if args.cpt: h5b_cfg["benchmarks"][i]["configuration"]["EMULATED_COMPUTE_TIME_PER_TIMESTEP"] = f"{args.cpt} s"
         if args.dct: h5b_cfg["benchmarks"][i]["configuration"]["DELAYED_CLOSE_TIMESTEPS"] = args.dct
