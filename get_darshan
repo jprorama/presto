@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#
+# get the darshan logs for an experiment
+#
+
+darshanlog=`darshan-config --log-path`
+
+#timespan=$1
+#shift
+
+for expdir in $@
+do
+# get the job id
+job_id=`ls -tr $expdir \
+        | awk -F- '/^[0-9]/ {if ( NF > 3 ) \
+                      {split($2,out,"."); \
+                      print out[1]}}' \
+        | sort -n | uniq`
+
+# cp darshan logs to experiment
+mkdir -p ${expdir}/darshan
+for id in $job_id
+do
+  echo $id
+  #dirls=($(ls ${darshanlog}/${timespan}/*id${id}*))
+  # if the there are real files copy them
+  #if [ -f ${dirls[0]} ]
+  #then
+  cp -up ${darshanlog}/2024/[6789]/*/*id${id}* \
+         ${expdir}/darshan/
+  #fi
+done
+
+done
