@@ -3,6 +3,7 @@
 from pathlib import Path
 from pprint import pprint
 import json
+import math
 import libpressio
 import numpy as np
 import itertools
@@ -10,7 +11,9 @@ from mpi4py.futures import MPICommExecutor
 from mpi4py import MPI
 import sys
 import argparse
-import math
+from adios2 import Adios, Stream, FileReader
+
+
 
 # procs to model
 parser = argparse.ArgumentParser(prog=sys.argv[0],
@@ -24,6 +27,15 @@ parser.add_argument("dataset",
                     help="dataset to compress")
 parser.add_argument("-d", "--debug", default=False,
                     help="print debug data to stderr")
+parser.add_argument("--step", default=0,
+                    help="step in adios2 file")
+parser.add_argument("--var",
+                    help="var in step")
+parser.add_argument("--adios2xml",
+                    help="adios2xml")
+parser.add_argument("--adios2refname",
+                    help="adios2refname")
+
 parser.add_argument("-s", "--shape", default="100x500x500",
                     help="dataset dimensions")
 parser.add_argument("-m", "--memshape", default="100x500x500",
@@ -130,9 +142,18 @@ def run_compressor(args):
 #
 if __name__ == '__main__':
 
-    # load dataset, create output path
-    input_path = Path(__file__).parent / dataset
-    input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
+
+    # if file end in .bp assume adios
+    if (dataset[-3:] == ".bp"):
+        # open file and read defined step
+        adios = Adios(args.adios2xml)
+        io = adios.declare_io(args.adios2refname)
+        fr = FileReader(dataset)
+        input_data=fr.read(args.var, step_selection=[int(args.step),1])
+    else:
+        # load dataset, create output path
+        input_path = Path(__file__).parent / dataset
+        input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
     if debug: print(f"read shape: {input_data.shape}", file=sys.stderr)
 
     # if mem_size is bigger than input data copy into larger space
