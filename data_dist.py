@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  ''')
 parser.add_argument("dataset",
                     help="dataset to compress")
-parser.add_argument("-d", "--debug", default=False,
+parser.add_argument("-d", "--debug", action='store_true',
                     help="print debug data to stderr")
 parser.add_argument("--step", default=0,
                     help="step in adios2 file")
