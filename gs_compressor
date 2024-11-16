@@ -1,0 +1,26 @@
+#!/bin/bash
+
+L=$1
+grid=$2
+split=$3
+ranks=${4:-1}
+extra_args=$5
+
+# create dir for distribution results
+mkdir -p data/experiments/gray-scott/gs${L}_1000
+
+varname=V
+
+for (( i=0; i<1000; i++ ))
+do
+    num=`printf "%03d" $i`
+    mpirun -n $ranks ./data_dist.py -s ${grid} -r ${split} -m ${grid} -t float64 -c sz3 -b 1e-2 -j --step $i --var ${varname} --adios2xml ../adiosvm/Tutorial/gray-scott/adios2.xml  --adios2refname SimulationOutput ${extra_args} ../adiosvm/Tutorial/gray-scott/data/experiment/adios_v2.10/gs${L}_10000.bp | ./filter_proc_size sz3 | sort -n > data/experiments/gray-scott/gs${L}_1000/${varname}_$num.dist
+done
+
+varname=U
+
+for (( i=0; i<1000; i++ ))
+do
+    num=`printf "%03d" $i`
+    mpirun -n $ranks ./data_dist.py -s ${grid} -r ${split} -m ${grid} -t float64 -c sz3 -b 1e-2 -j --step $i --var ${varname} --adios2xml ../adiosvm/Tutorial/gray-scott/adios2.xml  --adios2refname SimulationOutput ${extra_args} ../adiosvm/Tutorial/gray-scott/data/experiment/adios_v2.10/gs${L}_10000.bp | ./filter_proc_size sz3 | sort -n > data/experiments/gray-scott/gs${L}_1000/${varname}_$num.dist
+done
