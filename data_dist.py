@@ -142,96 +142,104 @@ def run_compressor(args):
 #
 if __name__ == '__main__':
 
-
-    # if file end in .bp assume adios
-    if (dataset[-3:] == ".bp"):
-        # open file and read defined step
-        adios = Adios(args.adios2xml)
-        io = adios.declare_io(args.adios2refname)
-        fr = FileReader(dataset)
-        input_data=fr.read(args.var, step_selection=[int(args.step),1])
-    else:
-        # load dataset, create output path
-        input_path = Path(__file__).parent / dataset
-        input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
-    if debug: print(f"read shape: {input_data.shape}", file=sys.stderr)
-
-    # if mem_size is bigger than input data copy into larger space
-    # https://stackoverflow.com/a/7115957/8928529
-
-    input_size = math.prod(dataset_shape)
-    mem_size = math.prod(mem_shape)
-    if (mem_size > input_size):
-        # cast into larger memory footprint, assumes 3D
-        mem_data = np.zeros(mem_shape, dtype=datatype)
-        mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
-        input_data = mem_data
-    if debug: print(f"mem shape: {input_data.shape}", file=sys.stderr)
-
-    input_data = cubify(input_data, dataset_newshape)
-    if debug: print(f"cubified shape: {input_data.shape}", file=sys.stderr)
-
-    # test truncate last cube to original data size
-    # only works for 1D data sets (i.e. resize of last dim only)
-    # and only if we resized to artificial mem_size
-    resize_last = False
-    if (mem_size > input_size):
-        if debug: print(f"input_data: {input_data.shape}", file=sys.stderr)
-        if debug: print(f"input_data.shape[1]: {input_data.shape[1]}", file=sys.stderr)
-        if debug: print(f"input_data.shape[2]: {input_data.shape[2]}", file=sys.stderr)
-        if (input_data.shape[1]==1 and input_data.shape[2]==1):
-            # take last cube and bring it back to size
-            resize_last = True
-
-    if debug: print(f"resize_last: {resize_last}", file=sys.stderr)
-
-    idx_range = input_data.shape[0]
-    last_len = 0 # assume we divide evenly
-    if (resize_last):
-        if debug: print(f"input_data.shape: {input_data.shape}", file=sys.stderr)
-        if debug: print(f"dataset_shape: {dataset_shape}", file=sys.stderr)
-        last_len = dataset_shape[2] % input_data.shape[3]
-        if debug:print(f"idx_range: {idx_range} last_len: {last_len}", file=sys.stderr)
-
-    # note: input_data[idx] are limited to < 2GiB of data
-    # due to pickled message size limits in MPI-1/2/3
-    # recommended to use pkl5 util to overcome limits
-    # https://github.com/mpi4py/mpi4py/issues/119
-    configs = [{
-            "compressor_id": compressor_id,
-            "compressor_config": {
-                "pressio:abs": bound
-            },
-            "bound": bound,
-            "idx": idx,
-            "data": input_data[idx],
-            "resize": (idx == (input_data.shape[0]-1) and resize_last),
-            "last_len": last_len
-        } for bound, idx, compressor_id in
-            itertools.product(
-                np.array(bounds),
-                range(idx_range),
-                compressors
-            )
-        ]
-
-
-
-    buff = dict();
-    index = 0
-    with MPICommExecutor() as pool:
-        for result in pool.map(run_compressor, configs, unordered=True):
-            algo = configs[index]['compressor_id']
-            if algo in buff:
-                buff[algo].append(result)
-            else:
-                buff[algo] = list()
-                buff[algo].append(result)
-            index+=1
-
     rank = MPI.COMM_WORLD.Get_rank()
+
+    # parse and split data set in rank 9
+    if (rank == 0):
+        # if file end in .bp assume adios
+        if (dataset[-3:] == ".bp"):
+            # open file and read defined step
+            adios = Adios(args.adios2xml)
+            io = adios.declare_io(args.adios2refname)
+            fr = FileReader(dataset)
+            input_data=fr.read(args.var, step_selection=[int(args.step),1])
+        else:
+            # load dataset, create output path
+            input_path = Path(__file__).parent / dataset
+            input_data = np.fromfile(input_path, dtype=datatype).reshape(dataset_shape)
+        if debug: print(f"read shape: {input_data.shape}", file=sys.stderr)
+
+        # if mem_size is bigger than input data copy into larger space
+        # https://stackoverflow.com/a/7115957/8928529
+
+        input_size = math.prod(dataset_shape)
+        mem_size = math.prod(mem_shape)
+        if (mem_size > input_size):
+            # cast into larger memory footprint, assumes 3D
+            mem_data = np.zeros(mem_shape, dtype=datatype)
+            mem_data[0:input_data.shape[0], 0:input_data.shape[1], 0:input_data.shape[2]] = input_data
+            input_data = mem_data
+        if debug: print(f"mem shape: {input_data.shape}", file=sys.stderr)
+
+        input_data = cubify(input_data, dataset_newshape)
+        if debug: print(f"cubified shape: {input_data.shape}", file=sys.stderr)
+
+        # test truncate last cube to original data size
+        # only works for 1D data sets (i.e. resize of last dim only)
+        # and only if we resized to artificial mem_size
+        resize_last = False
+        if (mem_size > input_size):
+            if debug: print(f"input_data: {input_data.shape}", file=sys.stderr)
+            if debug: print(f"input_data.shape[1]: {input_data.shape[1]}", file=sys.stderr)
+            if debug: print(f"input_data.shape[2]: {input_data.shape[2]}", file=sys.stderr)
+            if (input_data.shape[1]==1 and input_data.shape[2]==1):
+                # take last cube and bring it back to size
+                resize_last = True
+
+        if debug: print(f"resize_last: {resize_last}", file=sys.stderr)
+
+        idx_range = input_data.shape[0]
+        last_len = 0 # assume we divide evenly
+        if (resize_last):
+            if debug: print(f"input_data.shape: {input_data.shape}", file=sys.stderr)
+            if debug: print(f"dataset_shape: {dataset_shape}", file=sys.stderr)
+            last_len = dataset_shape[2] % input_data.shape[3]
+            if debug:print(f"idx_range: {idx_range} last_len: {last_len}", file=sys.stderr)
+
+        # note: input_data[idx] are limited to < 2GiB of data
+        # due to pickled message size limits in MPI-1/2/3
+        # recommended to use pkl5 util to overcome limits
+        # https://github.com/mpi4py/mpi4py/issues/119
+        configs = [{
+                "compressor_id": compressor_id,
+                "compressor_config": {
+                    "pressio:abs": bound
+                },
+                "bound": bound,
+                "idx": idx,
+                "data": input_data[idx],
+                "resize": (idx == (input_data.shape[0]-1) and resize_last),
+                "last_len": last_len
+            } for bound, idx, compressor_id in
+                itertools.product(
+                    np.array(bounds),
+                    range(idx_range),
+                    compressors
+                )
+            ]
+
+
+
+        buff = dict();
+        index = 0
+        rank = MPI.COMM_WORLD.Get_rank()
+
+    # assign split data set chunks to workers
+    with MPICommExecutor(MPI.COMM_WORLD) as pool:
+        if pool is not None:
+            for result in pool.map(run_compressor, configs, unordered=True):
+                if debug: print(f"result for {result}: \n\n\n\n", file=sys.stderr)
+                algo = configs[index]['compressor_id']
+                if algo in buff:
+                    buff[algo].append(result)
+                else:
+                    buff[algo] = list()
+                    buff[algo].append(result)
+                index+=1
+
+    # print compresson summary in rank 0
     if (rank == 0):
         if (jsonout):
-            print(json.dumps(buff, indent=1, cls=NpEncoder))
+            json.dump(buff, sys.stdout, indent=5, cls=NpEncoder)
         else:
             pprint(buff)
