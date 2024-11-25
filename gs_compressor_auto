@@ -1,0 +1,58 @@
+
+cores=${cores:-$1}
+numworkers=${numworkers:-$2}
+steps=${steps:-$3}
+L=${L:-$4}
+mem=${mem:-$5}
+split=${split:-$6}
+tag=${tag:-$7}
+dataset=${dataset:-$8}
+adiosxml=${adiosxml:-$9}
+outdir=${outdir:-$10}
+
+# number compressor processes active at a time
+tasks=`expr $cores / $numworkers`
+
+
+# compute division dataset steps
+stepsize=`expr $steps / $tasks`
+extras=`expr $steps % $tasks`
+
+# add one for the leader in the mpi4py pool
+pool=`expr $numworkers + 1`
+
+for var in U V
+do
+  extras=`expr $steps % $tasks`
+  start=0
+  running=0
+  jobs=1
+  while [[ $start -lt $steps ]]
+  do
+	end=`expr $start + $stepsize`
+	if [[ $extras -gt 0 ]]
+	then
+		end=`expr $end + 1`
+		extras=`expr $extras - 1`
+	fi
+	$dryrun ./gs_compressor $L $mem $split $pool $start $end $var $tag $dataset $adiosxml $outdir &
+	echo "submit job $jobs"
+
+	start=$end
+        running=`expr $running + $numworkers`
+
+	if [[ $running -eq $cores ]]
+	then
+		echo "wait on $jobs jobs"
+		wait
+		sleep 5
+		running=0
+		jobs=1
+	fi 
+
+	jobs=`expr $jobs + 1`
+  done
+  # wait on last compressor task
+  #echo fg
+done
+

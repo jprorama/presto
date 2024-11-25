@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# batch script for compression run
+# assumes vars passed in jobs
+
+. ~/bin/set_nuio
+cd ~/projects/p2
+. venv-new/bin/activate
+
+export OMPI_MCA_mtl_ofi_disable_hmem=true
+
+./gs_compressor_auto
